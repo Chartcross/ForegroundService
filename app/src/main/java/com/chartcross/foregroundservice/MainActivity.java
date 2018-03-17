@@ -1,5 +1,6 @@
 package com.chartcross.foregroundservice;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -33,6 +34,18 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+
+        if (id == R.id.action_start_service) {
+            Intent intent = new Intent(this, TestService.class);
+            intent.putExtra(TestService.TEST_DATA, "Test data passed from activity");
+            startService(intent);
+            return true;
+        }
+
+        if (id == R.id.action_stop_service) {
+            Intent intent = new Intent(this, TestService.class);
+            stopService(intent);
         }
 
         return super.onOptionsItemSelected(item);

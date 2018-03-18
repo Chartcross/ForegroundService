@@ -2,12 +2,16 @@ package com.chartcross.foregroundservice;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TestResultsReceiver.Receiver {
+
+    private TestResultsReceiver mReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -15,6 +19,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        mReceiver = new TestResultsReceiver(new Handler());
+        mReceiver.setReceiver(this);
     }
 
     @Override
@@ -38,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (id == R.id.action_start_service) {
             Intent intent = new Intent(this, TestService.class);
+            intent.putExtra(TestService.RESULTS_RECEIVER, mReceiver);
             intent.putExtra(TestService.TEST_DATA, "Test data passed from activity");
             startService(intent);
             return true;
@@ -49,5 +57,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == TestService.RESULT_OK) {
+            Log.e("MainActivity", resultData.getString(TestService.TEST_DATA));
+        }
     }
 }

@@ -6,12 +6,24 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity implements TestResultsReceiver.Receiver {
+import java.util.Locale;
 
+public class MainActivity extends AppCompatActivity implements TestResultsReceiver.Receiver, View.OnClickListener {
+
+    private String TAG = getClass().getSimpleName();
     private TestResultsReceiver mReceiver;
+    private TextView mTimeText;
+    private long mCurrentTime;
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putLong("current_time", mCurrentTime);
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,49 +32,82 @@ public class MainActivity extends AppCompatActivity implements TestResultsReceiv
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        mTimeText = findViewById(R.id.system_time_text);
         mReceiver = new TestResultsReceiver(new Handler());
         mReceiver.setReceiver(this);
+
+        Button startButton = findViewById(R.id.start_timer_button);
+        Button stopButton = findViewById(R.id.stop_timer_button);
+        startButton.setOnClickListener(this);
+        stopButton.setOnClickListener(this);
+
+        if (savedInstanceState == null || !savedInstanceState.containsKey("current_time")) {
+            mCurrentTime = 0;
+        } else {
+            mCurrentTime = savedInstanceState.getLong("current_time");
+        }
+        mTimeText.setText(String.format(Locale.UK, "%013d", mCurrentTime));
+        Log.d(TAG, "Activity created");
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    protected void onResume() {
+        mReceiver = new TestResultsReceiver(new Handler());
+        mReceiver.setReceiver(this);
+        Intent receiverIntent = new Intent(this, TestService.class);
+        receiverIntent.putExtra(TestService.RESULTS_RECEIVER, mReceiver);
+        receiverIntent.setAction(TestService.SET_RESULTS_RECEIVER_ACTION);
+        startService(receiverIntent);
+        Log.d(TAG, "Activity resumed");
+        super.onResume();
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    protected void onPause() {
+        if (mReceiver != null) {
+            Log.d(TAG, "Setting ResultsReciever to null");
+            mReceiver.setReceiver(null);
         }
+        Log.d(TAG, "Activity paused");
+        super.onPause();
+    }
 
-        if (id == R.id.action_start_service) {
-            Intent intent = new Intent(this, TestService.class);
-            intent.putExtra(TestService.RESULTS_RECEIVER, mReceiver);
-            intent.putExtra(TestService.TEST_DATA, "Test data passed from activity");
-            startService(intent);
-            return true;
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "Activity destroyed");
+        super.onDestroy();
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.start_timer_button:
+                Intent startIntent = new Intent(MainActivity.this, TestService.class);
+                startIntent.putExtra(TestService.RESULTS_RECEIVER, mReceiver);
+                startIntent.setAction(TestService.START_FOREGROUND_ACTION);
+                startService(startIntent);
+                break;
+            case R.id.stop_timer_button:
+                Intent stopIntent = new Intent(MainActivity.this, TestService.class);
+                stopIntent.setAction(TestService.STOP_FOREGROUND_ACTION);
+                startService(stopIntent);
+                break;
+            default:
+                break;
         }
-
-        if (id == R.id.action_stop_service) {
-            Intent intent = new Intent(this, TestService.class);
-            stopService(intent);
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
-        if (resultCode == TestService.RESULT_OK) {
-            Log.e("MainActivity", resultData.getString(TestService.TEST_DATA));
+        switch(resultCode) {
+            case TestService.TIMER_MESSAGE:
+                Log.d("MainActivity", resultData.getString(TestService.MESSAGE));
+                break;
+
+            case TestService.TIMER_TIME:
+                mCurrentTime = resultData.getLong(TestService.CURRENT_TIME);
+                mTimeText.setText(String.format(Locale.UK, "%013d", mCurrentTime));
+                break;
         }
     }
 }

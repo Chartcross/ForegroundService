@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements TestResultsReceiv
             mCurrentTime = savedInstanceState.getLong("current_time");
         }
         mTimeText.setText(String.format(Locale.UK, "%013d", mCurrentTime));
-        Log.d(TAG, "Activity created");
+        Log.d(TAG, "Activity created " + hashCode());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements TestResultsReceiv
         receiverIntent.putExtra(TestService.RESULTS_RECEIVER, mReceiver);
         receiverIntent.setAction(TestService.SET_RESULTS_RECEIVER_ACTION);
         startService(receiverIntent);
-        Log.d(TAG, "Activity resumed");
+        Log.d(TAG, "Activity resumed " + hashCode());
         super.onResume();
     }
 
@@ -68,13 +68,13 @@ public class MainActivity extends AppCompatActivity implements TestResultsReceiv
             Log.d(TAG, "Setting ResultsReciever to null");
             mReceiver.setReceiver(null);
         }
-        Log.d(TAG, "Activity paused");
+        Log.d(TAG, "Activity paused " + hashCode());
         super.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG, "Activity destroyed");
+        Log.d(TAG, "Activity destroyed " + hashCode());
         super.onDestroy();
     }
 

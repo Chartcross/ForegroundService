@@ -56,7 +56,7 @@ public class TestService extends Service {
 
     @Override
     public void onCreate() {
-        Log.d(TAG, "Service created");
+        Log.d(TAG, "Service created " + hashCode());
         super.onCreate();
         mNotificationBuilder = buildNotification();
     }
@@ -126,7 +126,7 @@ public class TestService extends Service {
             bundle.putString(MESSAGE, "Timer Stopped");
             mReceiver.send(TIMER_MESSAGE, bundle);
         }
-        Log.d(TAG, "Service destroyed");
+        Log.d(TAG, "Service destroyed " + hashCode());
     }
 
     class ServiceTimerTask extends TimerTask {
@@ -169,7 +169,9 @@ public class TestService extends Service {
             // if the notification is clicked
             //
             Intent activityIntent = new Intent(this, MainActivity.class);
-            activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            activityIntent.setAction(Intent.ACTION_MAIN);
+            activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
             PendingIntent pendingActivityIntent = PendingIntent.getActivity(this, 0, activityIntent, 0);
 
             //
